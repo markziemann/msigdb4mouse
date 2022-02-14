@@ -1,0 +1,96 @@
+---
+title: "Mouse MSigDB gene sets"
+author: "Mark Ziemann"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    fig_width: 7
+    fig_height: 7
+theme: cosmo
+---
+
+Source: TBA
+
+## Intro
+
+Mouse omics experiments are nearly as common as those using human, yet
+MSigDB only published human gene sets.
+
+The msigdbr R package provides a convenient way to get these gene sets,
+yet it requires a lot of R skills to get these into a form that works 
+with the GSEA java app.
+
+Previously I published a bash script to convert the GMT fil from human
+to mouse, but this approach has a downside that the gene sets and gene
+ortholog mapping files become outdated.
+
+A good solution would be to use msigdbr package to generate the gmt files
+for folks to download. 
+This should be conducted periodically to automatically update ortholog maps
+and msigdb versions.
+
+```{r,libs}
+
+library("msigdbr")
+library("dplyr")
+library("parallel")
+
+writeGMT <- function (object, fname ){
+  if (class(object) != "list") stop("object should be of class 'list'")
+                sep="\t",quote=FALSE,
+                file=fname,append=TRUE,col.names=FALSE,row.names=FALSE)
+  }
+}
+
+#writeGMT(object=athl,fname="Ath_AGI_LOCUS_TAIR10_Aug2012.txt.gmt")
+
+```
+
+## Fetch MSigDB gene sets
+
+```{r,fetch1}
+
+as.data.frame(msigdbr_collections())
+
+# GO
+go_gene_sets <- msigdbr(species = "mouse", category = "C5")
+gs_names <- unique(go_gene_sets$gs_name)
+go_gene_sets_list <- mclapply(gs_names, function (gsn) {
+  pull(unique(go_gene_sets[which(go_gene_sets$gs_name == gsn),"gene_symbol"])) },
+mc.cores=16)
+names(go_gene_sets_list) <- gs_names
+
+# KEGG
+c2_gene_sets <- msigdbr(species = "mouse", category = "C2")
+unique(c2_gene_sets$gs_subcat)
+kegg_gene_sets <-  c2_gene_sets[which(c2_gene_sets$gs_subcat == "CP:KEGG"),]
+gs_names <- unique(kegg_gene_sets$gs_name)
+kegg_gene_sets_list <- mclapply(gs_names, function (gsn) {
+  pull(unique(kegg_gene_sets[which(kegg_gene_sets$gs_name == gsn),"gene_symbol"])) },
+mc.cores=16)
+names(kegg_gene_sets_list) <- gs_names
+
+## Reactome
+reactome_gene_sets <-  c2_gene_sets[which(c2_gene_sets$gs_subcat == "CP:REACTOME"),]
+gs_names <- unique(reactome_gene_sets$gs_name)
+reactome_gene_sets_list <- mclapply(gs_names, function (gsn) {
+  pull(unique(reactome_gene_sets[which(reactome_gene_sets$gs_name == gsn),"gene_symbol"])) },
+mc.cores=16)
+names(reactome_gene_sets_list) <- gs_names
+
+
+## All msigDB
+msigdb_gene_sets <-  msigdbr(species = "mouse")
+
+gs_names <- unique(msigdb_gene_sets$gs_name)
+
+msigdb_gene_sets_list <- mclapply(gs_names, function (gsn) {
+  pull(unique(msigdb_gene_sets[which(msigdb_gene_sets$gs_name == gsn),"gene_symbol"])) },
+mc.cores=16)
+names(msigdb_gene_sets_list) <- gs_names
+
+```
+

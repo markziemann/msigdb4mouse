@@ -1,6 +1,6 @@
 # msigdb4mouse
 
-MSigDB gene sets for mouse
+MSigDB gene sets for mouse in GMT format
 
 [KEGG](http://ziemann-lab.net/public/msigdb_mouse/mouse_msigdb_kegg_2022-02-16.gmt)
 
